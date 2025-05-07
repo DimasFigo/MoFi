@@ -52,21 +52,16 @@ MoFi/
 │   └── images/
 │       └── mofi.png
 │       └── thunderbolts.jpg
+│       └── havoc.jpeg
+│       └── sinners.jpg
 ├── lib/                     # Folder kode sumber aplikasi
-│   ├── main.dart            # Entry point aplikasi
+│   ├── main.dart            # Entry point aplikasi (loginpage)
 │   ├── homepage.dart        # Halaman utama (HomePage)
-│   ├── login_page.dart      # Halaman Login (LoginDemo)
 │   ├── havoc_page.dart      # Halaman detail film 'Havoc'
 │   ├── thunderbolts_page.dart # Halaman detail film 'Thunderbolts'
 │   └── sinners_page.dart    # Halaman detail film 'Sinners'
 └── pubspec.yaml             # File konfigurasi Flutter project
 ```
-
-## Fitur yang Dijalankan
-
-- **Login Page**: Pengguna bisa login menggunakan email dan password. Setelah login berhasil, pengguna akan diarahkan ke halaman utama.
-- **Genre Page**: Menampilkan genre film dan memungkinkan pengguna memilih genre untuk mencari film terkait.
-- **Film Pages**: Setiap film memiliki halaman detail dengan gambar, sinopsis, rating, tombol like, dan tombol untuk menonton trailer.
 
 ## Cara Menambahkan Film Baru
 1. Buka file `homepage.dart` dan tambahkan film baru pada bagian daftar film.
