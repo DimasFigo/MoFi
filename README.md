@@ -1,5 +1,5 @@
 
-# MoFi - Movie Finder App
+# MoFi - Movie Figo App
 
 MoFi (Movie Finder) adalah aplikasi Flutter yang memudahkan pengguna untuk menemukan film terbaru dan informasi terkait seperti genre, sinopsis, trailer, dan rating. Aplikasi ini menggunakan antarmuka yang ramah pengguna dengan berbagai fitur menarik untuk pengalaman menonton yang lebih baik.
 
