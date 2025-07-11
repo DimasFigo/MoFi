@@ -36,7 +36,7 @@ flutter_icons:
 flutter:
   uses-material-design: true
   assets:
-    - .env 
+    - .env
     - assets/images/mofi.png
     - assets/images/thunderbolts.jpg
     - assets/images/havoc.jpeg
