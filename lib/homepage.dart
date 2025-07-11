@@ -1,313 +1,259 @@
-// mengimport semua package dan file halaman yang digunakan
 import 'package:flutter/material.dart';
-import 'thunderbolts_page.dart'; 
-import 'havoc_page.dart';        
-import 'sinners_page.dart';       
+import 'package:firebase_auth/firebase_auth.dart'; 
+import 'api_service.dart';
+import 'auth_service.dart'; 
+import 'movie_model.dart'; 
+import 'movie_detail_page.dart';
 
-// ini adalah membuat halaman dengan statelesswidget tidak interaktif
-class HomePage extends StatelessWidget {
+// Widget utama untuk halaman beranda (Home).
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  // list movie yang akan ditampilkan 
-  final List<Map<String, String>> movies = const [
-    {
-      'title': 'Thunderbolts',
-      'image': 'assets/images/thunderbolts.jpg',
-    },
-    {
-      'title': 'Havoc',
-      'image': 'assets/images/havoc.jpeg',
-    },
-    {
-      'title': 'Sinners',
-      'image': 'assets/images/sinners.jpg',
-    },
-  ];
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
 
-  // ini adalah list genre yang akan ditampilkan
+class _HomePageState extends State<HomePage> {
+  // State untuk menyimpan data dari API.
+  late Future<List<Movie>> _popularMovies;
+  final ApiService _apiService = ApiService();
+  
+  // State untuk Bottom Navigation Bar.
+  int _selectedIndex = 0;
+
+  // State untuk data otentikasi pengguna.
+  final AuthService _authService = AuthService();
+  User? _user;
+
+  // Daftar genre film (data statis).
   final List<String> genres = const [
-    'Action',
-    'Adventure',
-    'Drama',
-    'Comedy',
-    'Sci-Fi',
-    'Horror',
+    'Action', 'Adventure', 'Drama', 'Comedy', 'Sci-Fi', 'Horror',
   ];
 
+  // Fungsi yang dijalankan pertama kali saat halaman dimuat.
+  @override
+  void initState() {
+    super.initState();
+    // Mengambil data film populer dari API.
+    _popularMovies = _apiService.getPopularMovies();
+    // Mengambil informasi pengguna yang sedang login.
+    _user = FirebaseAuth.instance.currentUser;
+  }
+
+  // Fungsi yang menangani event tap pada Bottom Navigation Bar.
+  void _onNavBarTapped(int index) {
+    setState(() => _selectedIndex = index);
+    // Logika untuk navigasi lain bisa ditambahkan di sini.
+  }
+
+  // Fungsi utama yang membangun seluruh UI halaman.
   @override
   Widget build(BuildContext context) {
-    // scaffold berfungsi sebagai rangka utama layout halaman
-    return Scaffold( 
-      backgroundColor: Colors.white,
-      // terdapat AppBar yang berfungsi menampilkah header diatas halaman
+    return Scaffold(
       appBar: AppBar(
-        // ini adalah judul yang halaman homepage
-        title: const Text("MoFi - Home"),
+        title: const Text("MoFi - Home", style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: const Color(0xFFA259FF),
-        centerTitle: true,
-        elevation: 4,
+        elevation: 0,
       ),
-      // Drawer berfungsi sebagai menu navigasi sidebar 
-      drawer: Drawer(
-        backgroundColor: const Color(0xFFF5F5F5),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            // header drawer
-            Container(
-              color: const Color(0xFFA259FF),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Icon(Icons.account_circle, size: 50, color: Colors.white),
-                  SizedBox(height: 12),
-                  Text(
-                    'Welcome, User!',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ),
-                  Text(
-                    'user@example.com',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-            // ini adalah menu item setting
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('Settings'),
-              // ini adalah menu ketika dia meng klick menu setting maka akan keluar text nya pop up
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Navigasi ke Pengaturan')),
-                );
-              },
-            ),
-            // ini  adalah garis pemisah
-            const Divider(),
-            // ini adalah menu logout 
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout'),
-              // ini adalah menu ketika dia meng klick menu logout maka akan keluar text pop up
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Berhasil logout')),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-
-      // ini adalah body halaman utama 
+      // Menambahkan drawer (menu samping) ke Scaffold.
+      drawer: _buildAppDrawer(),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            // Ini adalah konten trending
-            const Text(
-              '🔥 Trending Movies',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF111111),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ini adalah list movie
-            SizedBox(
-              height: 150,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: movies.length,
-                itemBuilder: (context, index) {
-                  final movie = movies[index];
-                  return GestureDetector(
-                    onTap: () {
-                      // seleksi if ini digunakan untuk ketika meng klick movie yang dipilih maka akan diarahkan 
-                      // page sesuai dengan nama movie nya
-                      if (movie['title'] == 'Thunderbolts') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ThunderboltsPage()),
-                        );
-                      } else if (movie['title'] == 'Havoc') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const HavocPage()),
-                        );
-                      } else if (movie['title'] == 'Sinners') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SinnersPage()),
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: 120,
-                      margin: const EdgeInsets.only(right: 12),
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            movie['image']!,
-                            width: 120,
-                            height: 90,
-                            fit: BoxFit.cover,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            movie['title']!,
-                            style: const TextStyle(fontSize: 14),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 30),
-
-            // ini adalah konten genre
-            const Text(
-              '🎬 Browse by Genre',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF111111),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ini digunakan untuk genre bisa ditekan
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: genres.map((genre) {
-                return ActionChip(
-                  backgroundColor: const Color(0xFF00B4D8),
-                  label: Text(
-                    genre,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  // ini adalah ketika genre ditekan maka akan menampilkan pesan pop up
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Kamu memilih genre: $genre'),
-                        backgroundColor: const Color(0xFFA259FF),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 30),
-
-            // ini adalah konten All Movies
-            const Text(
-              '📺 All Movies',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF111111),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // ini adalah list daftar film
-            Column(
-              children: movies.map((movie) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  color: const Color(0xFFF0F0F0),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
-                    leading: Image.asset(
-                      movie['image']!,
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                    ),
-                    title: Text(
-                      movie['title']!,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.play_circle_fill,
-                      color: Color(0xFF00B4D8),
-                      size: 30,
-                    ),
-                    onTap: () { 
-                      // seleksi if ini digunakan untuk ketika meng klick movie yang dipilih maka akan diarahkan 
-                      // page sesuai dengan nama movie nya
-                      if (movie['title'] == 'Thunderbolts') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ThunderboltsPage()),
-                        );
-                      } else if (movie['title'] == 'Havoc') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const HavocPage()),
-                        );
-                      } else if (movie['title'] == 'Sinners') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const SinnersPage()),
-                        );
-                      }
-                    },
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildGenreSection(),
+              const SizedBox(height: 24),
+              _buildAllMoviesSection(),
+            ],
+          ),
         ),
       ),
-
-      // ini adalah menu navigation bar di bawah 
       bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+        currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFFA259FF),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          // ini adalah menu home
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+        onTap: _onNavBarTapped,
+      ),
+    );
+  }
+
+  // Fungsi untuk membangun widget Drawer (menu samping).
+  Widget _buildAppDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          // Header pada drawer yang menampilkan info pengguna.
+          UserAccountsDrawerHeader(
+            accountName: Text(
+              _user?.displayName ?? 'Guest User', // Tampilkan nama pengguna.
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            accountEmail: Text(_user?.email ?? 'no-email@example.com'), // Tampilkan email.
+            currentAccountPicture: CircleAvatar(
+              // Tampilkan foto profil dari URL jika ada.
+              backgroundImage: _user?.photoURL != null 
+                  ? NetworkImage(_user!.photoURL!) 
+                  : null,
+              // Jika tidak ada foto, tampilkan huruf pertama dari email.
+              child: _user?.photoURL == null 
+                  ? Text(_user?.email?.substring(0, 1).toUpperCase() ?? 'G') 
+                  : null,
+            ),
+            decoration: const BoxDecoration(
+              color: Color(0xFFA259FF),
+            ),
           ),
-          // ini adalah menu favorites
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorites',
+          // Menu item di dalam drawer.
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('Profile'),
+            onTap: () => Navigator.pop(context), // Tutup drawer.
           ),
-          // ini adalah menu profile
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
+          ListTile(
+            leading: const Icon(Icons.favorite_border),
+            title: const Text('Favorites'),
+            onTap: () => Navigator.pop(context), // Tutup drawer.
+          ),
+          const Divider(), // Garis pemisah.
+          // Menu item untuk logout.
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Logout'),
+            onTap: () async {
+              Navigator.pop(context); // Tutup drawer terlebih dahulu.
+              await _authService.signOut();
+              // AuthWrapper akan otomatis mengarahkan ke halaman login.
+            },
           ),
         ],
-        // ini adalah ketika navigasi ditekan akan keluar pop up
-        onTap: (index) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Navigasi ditekan')),
+      ),
+    );
+  }
+
+  // Fungsi untuk membangun bagian genre.
+  Widget _buildGenreSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('🎬 Browse by Genre', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10.0,
+          runSpacing: 10.0,
+          children: genres.map((genre) => ActionChip(
+            label: Text(genre),
+            labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            backgroundColor: const Color(0xFF00B4D8),
+            onPressed: () {}, // Aksi saat genre ditekan.
+          )).toList(),
+        ),
+      ],
+    );
+  }
+
+  // Fungsi untuk membangun bagian daftar semua film.
+  Widget _buildAllMoviesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('📺 All Movies', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
+        // FutureBuilder untuk menampilkan data film yang diambil dari API.
+        FutureBuilder<List<Movie>>(
+          future: _popularMovies,
+          builder: (context, snapshot) {
+            // Tampilkan loading indicator saat data sedang dimuat.
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } 
+            // Tampilkan pesan error jika terjadi kesalahan.
+            else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } 
+            // Tampilkan pesan jika tidak ada data.
+            else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('Tidak ada film yang ditemukan.'));
+            }
+            // Jika data berhasil dimuat, bangun daftar film.
+            final movies = snapshot.data!;
+            return ListView.builder(
+              shrinkWrap: true, // Agar ListView menyesuaikan ukurannya dengan konten.
+              physics: const NeverScrollableScrollPhysics(), // Menonaktifkan scroll di dalam ListView.
+              itemCount: movies.length,
+              itemBuilder: (context, index) {
+                final movie = movies[index];
+                return _buildMovieListItem(movie); // Bangun item untuk setiap film.
+              },
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // Fungsi untuk membangun satu item dalam daftar film.
+  Widget _buildMovieListItem(Movie movie) {
+    final imageUrl = 'https://image.tmdb.org/t/p/w200${movie.posterPath}';
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: InkWell(
+        // Aksi saat item film ditekan (navigasi ke halaman detail).
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => MovieDetailPage(movie: movie)),
           );
         },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF0F0F0),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8.0),
+                child: Image.network(imageUrl, width: 70, height: 100, fit: BoxFit.cover),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      movie.title,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 20),
+                        const SizedBox(width: 4),
+                        Text(
+                          movie.voteAverage.toStringAsFixed(1), // Format rating.
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Icon(Icons.play_circle_fill, color: Color(0xFF00B4D8), size: 40),
+            ],
+          ),
+        ),
       ),
     );
   }

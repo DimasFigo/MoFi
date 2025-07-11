@@ -9,7 +9,18 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  http: ^1.2.1
 
+  firebase_core: ^3.1.1
+  firebase_auth: ^5.1.1
+
+  url_launcher: ^6.3.1 
+
+  flutter_dotenv: ^5.1.0 
+
+  cupertino_icons: ^1.0.2
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -25,6 +36,7 @@ flutter_icons:
 flutter:
   uses-material-design: true
   assets:
+    - .env 
     - assets/images/mofi.png
     - assets/images/thunderbolts.jpg
     - assets/images/havoc.jpeg

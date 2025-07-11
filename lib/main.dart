@@ -1,12 +1,30 @@
-// mengimport semua package dan file halaman yang digunakan
 import 'package:flutter/material.dart';
-import 'homepage.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'auth_service.dart';
+import 'auth_wrapper.dart';
+import 'firebase_options.dart';
+import 'register_page.dart'; 
 
-void main() {
+// Fungsi utama yang pertama kali dijalankan saat aplikasi dibuka.
+void main() async {
+  // Memastikan semua komponen Flutter siap sebelum menjalankan kode async.
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Memuat variabel lingkungan dari file .env.
+  await dotenv.load(fileName: ".env");
+
+  // Menginisialisasi koneksi ke Firebase.
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
+  // Menjalankan aplikasi utama.
   runApp(const MovieGoApp());
 }
 
-// ini adalah membuat halaman dengan statelesswidget tidak interaktif
+// Widget root dari aplikasi.
 class MovieGoApp extends StatelessWidget {
   const MovieGoApp({super.key});
 
@@ -14,13 +32,26 @@ class MovieGoApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MoFi',
-      debugShowCheckedModeBanner: false,
-      home: const LoginDemo(),
+      debugShowCheckedModeBanner: false, // Menghilangkan banner debug.
+      theme: ThemeData(
+        primarySwatch: Colors.deepPurple,
+        // Tema default untuk semua input field di aplikasi.
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFFF0F0F0),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(15)),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      // AuthWrapper akan menentukan halaman mana yang ditampilkan (Login atau Home).
+      home: const AuthWrapper(),
     );
   }
 }
 
-// ini adalah halaman login
+// Widget untuk halaman login.
 class LoginDemo extends StatefulWidget {
   const LoginDemo({super.key});
 
@@ -29,6 +60,58 @@ class LoginDemo extends StatefulWidget {
 }
 
 class _LoginDemoState extends State<LoginDemo> {
+  // Controller untuk field email dan password.
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+
+  // State untuk UI.
+  bool _isLoading = false;
+  String _errorMessage = '';
+  bool _isPasswordVisible = false;
+
+  // Membersihkan controller untuk mencegah memory leak.
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // Fungsi untuk menangani proses login pengguna.
+  void _signIn() async {
+    FocusScope.of(context).unfocus(); // Menutup keyboard.
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    // Validasi input.
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Email dan Password tidak boleh kosong.');
+      return;
+    }
+
+    // Memulai proses loading.
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    // Memanggil service untuk login.
+    User? user = await _authService.signInWithEmailAndPassword(email, password);
+
+    if (!mounted) return;
+
+    // Menghentikan proses loading.
+    setState(() => _isLoading = false);
+
+    // Menampilkan pesan error jika login gagal.
+    if (user == null) {
+      setState(() => _errorMessage = 'Login Gagal. Periksa kembali email dan password Anda.');
+    }
+    // Navigasi ke halaman utama ditangani secara otomatis oleh AuthWrapper.
+  }
+
+  // Fungsi untuk membangun UI halaman login.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,106 +123,79 @@ class _LoginDemoState extends State<LoginDemo> {
           children: <Widget>[
             const Text(
               'Welcome to MoFi',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFA259FF), // ungu terang
-                letterSpacing: 1.2,
-              ),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFFA259FF)),
             ),
             const SizedBox(height: 20),
-
-            // ini adalah logo apk yang terdapat pada file assets/images
+            // Menampilkan logo aplikasi.
             SizedBox(
-              width: 200,
-              height: 150,
+              width: 200, height: 150,
               child: Image.asset('assets/images/mofi.png'),
             ),
             const SizedBox(height: 30),
 
-            // ini form unyuk memasukkan email
-            const TextField(
-              style: TextStyle(color: Colors.black),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Color(0xFFF0F0F0),
+            // Field input untuk email.
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
                 labelText: 'Email',
-                labelStyle: TextStyle(color: Colors.black),
-                hintText: 'you@example.com',
-                hintStyle: TextStyle(color: Colors.black45),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(15)),
-                ),
+                prefixIcon: Icon(Icons.email_outlined),
               ),
             ),
             const SizedBox(height: 20),
 
-            // ini form untuk memasukkan password
-            const TextField(
-              obscureText: true,
-              style: TextStyle(color: Colors.black),
+            // Field input untuk password.
+            TextField(
+              controller: _passwordController,
+              obscureText: !_isPasswordVisible,
               decoration: InputDecoration(
-                filled: true,
-                fillColor: Color(0xFFF0F0F0),
                 labelText: 'Password',
-                labelStyle: TextStyle(color: Colors.black),
-                hintText: 'Enter your password',
-                hintStyle: TextStyle(color: Colors.black45),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(15)),
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                 ),
               ),
             ),
 
-            // ini menu forgot password
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                // ini untuk ketika diklick maka akan mengarahkan tetapi belum digunakan
-                onPressed: () {
-                },
-                child: const Text(
-                  'Forgot Password?',
-                  style: TextStyle(
-                    color: Color(0xFFBB86FC),
-                    fontSize: 14,
-                  ),
+            // Widget untuk menampilkan pesan error.
+            if (_errorMessage.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12, bottom: 4),
+                child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontSize: 14), textAlign: TextAlign.center),
+              ),
+            const SizedBox(height: 20),
+            
+            // Tombol Login.
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _signIn,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00B4D8),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 ),
+                child: _isLoading 
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Login', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
             ),
-            const SizedBox(height: 10),
-
-            // ini adalah menu login
-            ElevatedButton(
-              // ini adalah ketika menu login di tekan akan mengarahkan ke HomePage
+            const SizedBox(height: 20),
+            
+            // Tombol untuk navigasi ke halaman registrasi.
+            TextButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const HomePage()),
+                  MaterialPageRoute(builder: (context) => const RegisterPage()),
                 );
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00B4D8), // biru neon
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 80,
-                  vertical: 15,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                elevation: 5,
-              ),
               child: const Text(
-                'Login',
-                style: TextStyle(fontSize: 20, color: Colors.white),
+                'New to MoFi? Create Account',
+                style: TextStyle(color: Colors.black54),
               ),
-            ),
-            const SizedBox(height: 80),
-
-            // ini untuk menu create account tetapi masih belum bisa digunakan hanya text biasa
-            const Text(
-              'New to MoFi? Create Account',
-              style: TextStyle(color: Colors.black54),
             ),
           ],
         ),
